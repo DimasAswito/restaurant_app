@@ -1,4 +1,18 @@
 import 'customer_review.dart';
+import 'restaurant.dart';
+
+extension RestaurantDetailMapper on RestaurantDetail {
+  Restaurant toRestaurant() {
+    return Restaurant(
+      id: id,
+      name: name,
+      description: description,
+      pictureId: pictureId,
+      city: city,
+      rating: rating,
+    );
+  }
+}
 
 class RestaurantDetail {
   final String id;

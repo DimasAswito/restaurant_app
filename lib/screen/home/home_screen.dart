@@ -15,7 +15,7 @@ class HomeScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
-            "Restoran",
+            "Daftar Restoran",
             style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
           ),
           centerTitle: true,

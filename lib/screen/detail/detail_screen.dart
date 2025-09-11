@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:restaurant_app/data/db/favorite_db.dart';
+import 'package:restaurant_app/data/model/restaurant_detail.dart';
+import 'package:restaurant_app/provider/favorite/favorite_provider.dart';
 import '../../provider/detail/detail_provider.dart';
 import '../../data/api/api_service.dart';
 import 'component/menu_card.dart';
@@ -11,12 +14,21 @@ class DetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => DetailProvider(apiService: ApiService())..fetchDetail(id),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) =>
+              DetailProvider(apiService: ApiService())..fetchDetail(id),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              FavoriteProvider(dbHelper: FavoriteDb())..loadFavorites(),
+        ),
+      ],
       child: Scaffold(
-        body: Consumer<DetailProvider>(
-          builder: (context, provider, _) {
-            final state = provider.state;
+        body: Consumer2<DetailProvider, FavoriteProvider>(
+          builder: (context, detailProvider, favProvider, _) {
+            final state = detailProvider.state;
             if (state is DetailLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is DetailLoaded) {
@@ -226,6 +238,35 @@ class DetailScreen extends StatelessWidget {
                         icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () => Navigator.pop(context),
                       ),
+                    ),
+                  ),
+
+                  Positioned(
+                    top: 40,
+                    right: 16,
+                    child: FutureBuilder<bool>(
+                      future: favProvider.isFavorite(resto.id),
+                      builder: (context, snapshot) {
+                        final isFav = snapshot.data ?? false;
+                        return CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          child: IconButton(
+                            icon: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              color: isFav ? Colors.red : Colors.white,
+                            ),
+                            onPressed: () async {
+                              if (isFav) {
+                                await favProvider.removeFavorite(resto.id);
+                              } else {
+                                await favProvider.addFavorite(
+                                  resto.toRestaurant(),
+                                );
+                              }
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],

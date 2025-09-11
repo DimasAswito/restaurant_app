@@ -15,7 +15,7 @@ class SearchScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
-            "Restoran",
+            "Cari Restoran",
             style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
           ),
           centerTitle: true,
