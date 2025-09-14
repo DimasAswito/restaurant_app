@@ -25,31 +25,29 @@ class FavoriteDb {
       version: 1,
       onCreate: (db, version) async {
         await db.execute('''
-          CREATE TABLE $_tableName(
-            id TEXT PRIMARY KEY,
-            name TEXT,
-            city TEXT,
-            rating REAL,
-            pictureId TEXT
-          )
-        ''');
+        CREATE TABLE $_tableName(
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          description TEXT,
+          city TEXT,
+          rating REAL,
+          pictureId TEXT
+        )
+      ''');
       },
     );
   }
 
   Future<void> insertFavorite(Restaurant restaurant) async {
     final db = await database;
-    await db.insert(
-      _tableName,
-      {
-        'id': restaurant.id,
-        'name': restaurant.name,
-        'city': restaurant.city,
-        'rating': restaurant.rating,
-        'pictureId': restaurant.pictureId,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert(_tableName, {
+      'id': restaurant.id,
+      'name': restaurant.name,
+      'description': restaurant.description,
+      'city': restaurant.city,
+      'rating': restaurant.rating,
+      'pictureId': restaurant.pictureId,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<Restaurant>> getFavorites() async {
@@ -60,7 +58,7 @@ class FavoriteDb {
       return Restaurant(
         id: row['id'],
         name: row['name'],
-        description: '', // tidak disimpan di favorit
+        description: row['description'],
         pictureId: row['pictureId'],
         city: row['city'],
         rating: row['rating'],
@@ -70,8 +68,11 @@ class FavoriteDb {
 
   Future<Restaurant?> getFavoriteById(String id) async {
     final db = await database;
-    final List<Map<String, dynamic>> result =
-    await db.query(_tableName, where: 'id = ?', whereArgs: [id]);
+    final List<Map<String, dynamic>> result = await db.query(
+      _tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
 
     if (result.isNotEmpty) {
       final row = result.first;
@@ -94,12 +95,7 @@ class FavoriteDb {
 
   Future<bool> isFavorite(String id) async {
     final db = await database;
-    final result = await db.query(
-      _tableName,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final result = await db.query(_tableName, where: 'id = ?', whereArgs: [id]);
     return result.isNotEmpty;
   }
-
 }

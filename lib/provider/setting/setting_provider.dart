@@ -4,8 +4,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'dart:io';
-import 'package:flutter/services.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 class SettingProvider extends ChangeNotifier {
   static const String themeKey = "theme_dark";
@@ -18,7 +16,7 @@ class SettingProvider extends ChangeNotifier {
   bool get isReminderActive => _isReminderActive;
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
 
   SettingProvider() {
     _initNotification();
@@ -35,26 +33,22 @@ class SettingProvider extends ChangeNotifier {
     await flutterLocalNotificationsPlugin.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('Notifikasi ditekan: ${response.payload}');
+        print('Notifikasi diterima dengan payload: ${response.payload}');
       },
     );
 
-    await _createNotificationChannel();
-  }
-
-  Future<void> _createNotificationChannel() async {
-    const androidChannel = AndroidNotificationChannel(
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'daily_reminder_channel',
       'Daily Reminder',
       description: 'Reminder harian jam 11 siang',
       importance: Importance.max,
     );
 
-    final androidPlugin = flutterLocalNotificationsPlugin
+    await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-
-    await androidPlugin?.createNotificationChannel(androidChannel);
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
   }
 
   Future<void> _loadSettings() async {
@@ -63,9 +57,8 @@ class SettingProvider extends ChangeNotifier {
     _isReminderActive = prefs.getBool(reminderKey) ?? false;
 
     if (_isReminderActive) {
-      await _scheduleDailyReminder();
+      await scheduleDailyReminderAt(11, 0);
     }
-
     notifyListeners();
   }
 
@@ -82,24 +75,21 @@ class SettingProvider extends ChangeNotifier {
     await prefs.setBool(reminderKey, value);
 
     if (value) {
-      await _requestNotificationPermission();
-
       try {
         if (Platform.isAndroid) {
-          final plugin = FlutterLocalNotificationsPlugin();
-
-          final bool? granted = await plugin
+          final androidPlugin = flutterLocalNotificationsPlugin
               .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-              ?.requestExactAlarmsPermission();
+                AndroidFlutterLocalNotificationsPlugin
+              >();
 
-          if (granted == false) {
-            const platform = MethodChannel('flutter_local_notifications');
-            await platform.invokeMethod('openSystemSettings');
+          final bool? granted = await androidPlugin
+              ?.requestNotificationsPermission();
+          if (granted != true) {
+            print("Izin notifikasi ditolak");
             return;
           }
         }
-        await _scheduleDailyReminder();
+        await scheduleDailyReminderAt(11, 0);
       } catch (e) {
         print("Gagal aktifkan reminder: $e");
       }
@@ -110,30 +100,15 @@ class SettingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _requestNotificationPermission() async {
-    if (Platform.isAndroid) {
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      if (androidInfo.version.sdkInt >= 33) {
-        final granted = await flutterLocalNotificationsPlugin
-            .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-            ?.requestNotificationsPermission();
-        if (granted == false) {
-          print("Permission notifikasi ditolak");
-        }
-      }
-    }
-  }
-
-  Future<void> _scheduleDailyReminder() async {
+  Future<void> scheduleDailyReminderAt(int hour, int minute) async {
     final now = tz.TZDateTime.now(tz.local);
     var scheduled = tz.TZDateTime(
       tz.local,
       now.year,
       now.month,
       now.day,
-      17,
-      55,
+      hour,
+      minute,
     );
 
     if (scheduled.isBefore(now)) {
@@ -143,13 +118,13 @@ class SettingProvider extends ChangeNotifier {
     await flutterLocalNotificationsPlugin.zonedSchedule(
       1,
       'Waktunya makan siang!',
-      'Jangan lupa makan siang hari ini 🍲',
+      'Jangan lupa makan siang hari ini',
       scheduled,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_reminder_channel',
           'Daily Reminder',
-          channelDescription: 'Reminder harian jam 11 siang',
+          channelDescription: 'Reminder harian',
           importance: Importance.max,
           priority: Priority.high,
         ),

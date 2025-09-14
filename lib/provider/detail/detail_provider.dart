@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:restaurant_app/data/model/restaurant.dart';
 import '../../data/api/api_service.dart';
 import '../../data/model/restaurant_detail.dart';
 
@@ -52,4 +53,23 @@ class DetailProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  void setFromLocal(Restaurant resto) {
+    _state = DetailLoaded(
+      RestaurantDetail(
+        id: resto.id,
+        name: resto.name,
+        description: resto.description,
+        pictureId: resto.pictureId,
+        city: resto.city,
+        rating: resto.rating,
+        address: '',
+        categories: [],
+        menus: Menu(foods: [], drinks: []),
+        customerReviews: [],
+      ),
+    );
+    notifyListeners();
+  }
+
 }

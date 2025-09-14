@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:restaurant_app/provider/favorite/favorite_provider.dart';
 import 'package:restaurant_app/provider/setting/setting_provider.dart';
+import 'data/db/favorite_db.dart';
 import 'screen/main/main_screen.dart';
 import 'style/theme/app_theme.dart';
 import 'provider/main/main_provider.dart';
@@ -11,6 +13,8 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => MainProvider()),
         ChangeNotifierProvider(create: (_) => SettingProvider()),
+        ChangeNotifierProvider(create: (_) =>FavoriteProvider(dbHelper: FavoriteDb())..loadFavorites(),
+        ),
       ],
 
       child: const MyApp(),

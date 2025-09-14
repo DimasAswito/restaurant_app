@@ -29,12 +29,16 @@ class RestaurantCard extends StatelessWidget {
                 shadowColor: Colors.black26,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    "https://restaurant-api.dicoding.dev/images/small/${restaurant.pictureId}",
+                  child: FadeInImage.assetNetwork(
+                    placeholder: 'assets/images/placeholder.png',
+                    image: "https://restaurant-api.dicoding.dev/images/medium/${restaurant.pictureId}",
+                    imageErrorBuilder: (context, error, stackTrace) {
+                      return Image.asset('assets/images/placeholder.png', width:100, height: 100, fit: BoxFit.cover);
+                    },
                     width: 100,
                     height: 100,
                     fit: BoxFit.cover,
-                  ),
+                  )
                 ),
               ),
             ),

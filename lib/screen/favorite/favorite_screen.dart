@@ -20,53 +20,38 @@ class FavoriteScreen extends StatelessWidget {
         backgroundColor: Colors.green,
       ),
       body: SafeArea(
-        child: ChangeNotifierProvider(
-          create: (_) => FavoriteProvider(dbHelper: FavoriteDb())..loadFavorites(),
-          child: Consumer<FavoriteProvider>(
-            builder: (context, provider, _) {
-              final state = provider.state;
+        child: Consumer<FavoriteProvider>(
+          builder: (context, provider, _) {
+            final state = provider.state;
 
-              if (state is FavoriteLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is FavoriteLoaded) {
-                if (state.favorites.isEmpty) {
-                  return const Center(
-                    child: Text("Belum ada restoran favorit"),
-                  );
-                }
-                return ListView.builder(
-                  itemCount: state.favorites.length,
-                  itemBuilder: (context, index) {
-                    final resto = state.favorites[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DetailScreen(id: resto.id),
-                          ),
-                        );
-                      },
-                      child: RestaurantCard(
-                        restaurant: resto,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetailScreen(id: resto.id),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                );
-              } else if (state is FavoriteError) {
-                return Center(child: Text(state.message));
+            if (state is FavoriteLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is FavoriteLoaded) {
+              if (state.favorites.isEmpty) {
+                return const Center(child: Text("Belum ada restoran favorit"));
               }
-              return const SizedBox();
-            },
-          ),
+              return ListView.builder(
+                itemCount: state.favorites.length,
+                itemBuilder: (context, index) {
+                  final resto = state.favorites[index];
+                  return RestaurantCard(
+                    restaurant: resto,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetailScreen(id: resto.id, localRestaurant: resto,),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            } else if (state is FavoriteError) {
+              return Center(child: Text(state.message));
+            }
+            return const SizedBox();
+          },
         ),
       ),
     );

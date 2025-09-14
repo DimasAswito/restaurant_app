@@ -21,8 +21,7 @@ void main() {
 
   test('Harus mengembalikan daftar restoran ketika API berhasil', () async {
     final mockRestaurants = [
-      Restaurant(id: "1", name: "Restoran A", description: "Enak", city: "Jakarta", pictureId: "pic1", rating: 4.5),
-      Restaurant(id: "2", name: "Restoran B", description: "Mantap", city: "Bandung", pictureId: "pic2", rating: 4.2),
+      Restaurant(id: "rqdv5juczeskfw1e867", name: "Melting Pot", description: "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. ...", city: "Medan", pictureId: "https://restaurant-api.dicoding.dev/images/small/14", rating: 4.2),
     ];
 
     when(() => mockApiService.getRestaurantList())

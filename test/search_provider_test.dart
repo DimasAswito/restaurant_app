@@ -15,7 +15,7 @@ void main() {
     searchProvider = SearchProvider(apiService: mockApiService);
   });
 
-  test('State awal harus didefinisikan', () {
+  test('State Search awal harus ada', () {
     expect(searchProvider.isLoading, false);
     expect(searchProvider.message, "");
     expect(searchProvider.restaurants, []);
@@ -23,55 +23,33 @@ void main() {
 
   test('Harus mengembalikan daftar restoran ketika API berhasil', () async {
     final mockRestaurants = [
-      Restaurant(
-        id: "1",
-        name: "Restoran A",
-        description: "Enak",
-        city: "Jakarta",
-        pictureId: "pic1",
-        rating: 4.5,
-      ),
-      Restaurant(
-        id: "2",
-        name: "Restoran B",
-        description: "Mantap",
-        city: "Bandung",
-        pictureId: "pic2",
-        rating: 4.2,
-      ),
+      Restaurant(id: "rqdv5juczeskfw1e867", name: "Melting Pot", description: "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. ...", city: "Medan", pictureId: "https://restaurant-api.dicoding.dev/images/small/14", rating: 4.2),
     ];
 
     when(() => mockApiService.searchRestaurants("resto"))
         .thenAnswer((_) async => mockRestaurants);
 
-    // Act
     await searchProvider.searchRestaurant("resto");
 
-    // Assert
     expect(searchProvider.isLoading, false);
     expect(searchProvider.restaurants, equals(mockRestaurants));
     expect(searchProvider.message, isEmpty);
   });
 
   test('Harus mengembalikan error ketika API gagal', () async {
-    // Arrange
     when(() => mockApiService.searchRestaurants("resto"))
         .thenThrow(Exception("API Error"));
 
-    // Act
     await searchProvider.searchRestaurant("resto");
 
-    // Assert
     expect(searchProvider.isLoading, false);
     expect(searchProvider.restaurants, isEmpty);
     expect(searchProvider.message, equals("Gagal memuat data"));
   });
 
   test('Jika query kosong, harus reset state tanpa error', () async {
-    // Act
     await searchProvider.searchRestaurant("");
 
-    // Assert
     expect(searchProvider.restaurants, isEmpty);
     expect(searchProvider.message, "");
     expect(searchProvider.isLoading, false);
