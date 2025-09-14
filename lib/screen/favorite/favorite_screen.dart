@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../provider/favorite/favorite_provider.dart';
-import '../../data/db/favorite_db.dart';
 import '../detail/detail_screen.dart';
 import '../home/component/restaurant_card.dart';
 

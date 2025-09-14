@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -19,36 +20,48 @@ class SettingProvider extends ChangeNotifier {
       FlutterLocalNotificationsPlugin();
 
   SettingProvider() {
-    _initNotification();
-    _loadSettings();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await configureLocalTimeZone();
+    await _initNotification();
+    await _loadSettings();
   }
 
   Future<void> _initNotification() async {
-    tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
-
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit = AndroidInitializationSettings(
+      '@drawable/ic_notification',
+    );
     const initSettings = InitializationSettings(android: androidInit);
 
     await flutterLocalNotificationsPlugin.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        print('Notifikasi diterima dengan payload: ${response.payload}');
+        debugPrint('Notifikasi ditekan, payload: ${response.payload}');
       },
     );
+  }
 
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'daily_reminder_channel',
-      'Daily Reminder',
-      description: 'Reminder harian jam 11 siang',
-      importance: Importance.max,
+  Future<void> configureLocalTimeZone() async {
+    tz.initializeTimeZones();
+    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+  }
+
+  tz.TZDateTime _nextInstanceOfElevenAM() {
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      11,
     );
-
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(channel);
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+    return scheduledDate;
   }
 
   Future<void> _loadSettings() async {
@@ -57,7 +70,7 @@ class SettingProvider extends ChangeNotifier {
     _isReminderActive = prefs.getBool(reminderKey) ?? false;
 
     if (_isReminderActive) {
-      await scheduleDailyReminderAt(11, 0);
+      await scheduleDailyElevenAMNotification(id: 1);
     }
     notifyListeners();
   }
@@ -89,7 +102,7 @@ class SettingProvider extends ChangeNotifier {
             return;
           }
         }
-        await scheduleDailyReminderAt(11, 0);
+        await scheduleDailyElevenAMNotification(id: 1);
       } catch (e) {
         print("Gagal aktifkan reminder: $e");
       }
@@ -100,40 +113,43 @@ class SettingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> scheduleDailyReminderAt(int hour, int minute) async {
-    final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
+  Future<void> scheduleDailyElevenAMNotification({
+    required int id,
+    String channelId = "3",
+    String channelName = "Schedule Notification",
+  }) async {
+    final androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      channelId,
+      channelName,
+      icon: '@drawable/ic_notification',
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker',
+    );
+    const iOSPlatformChannelSpecifics = DarwinNotificationDetails();
+
+    final notificationDetails = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
     );
 
-    if (scheduled.isBefore(now)) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
+    final datetimeSchedule = _nextInstanceOfElevenAM();
 
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      1,
+      id,
       'Waktunya makan siang!',
       'Jangan lupa makan siang hari ini',
-      scheduled,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_reminder_channel',
-          'Daily Reminder',
-          channelDescription: 'Reminder harian',
-          importance: Importance.max,
-          priority: Priority.high,
-        ),
-      ),
+      datetimeSchedule,
+      notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
     );
+  }
 
-    print("Notifikasi dijadwalkan pada: $scheduled");
+  Future<List<PendingNotificationRequest>> pendingNotificationRequests() async {
+    final List<PendingNotificationRequest> pendingNotificationRequests =
+        await flutterLocalNotificationsPlugin.pendingNotificationRequests();
+    return pendingNotificationRequests;
   }
 
   Future<void> _cancelReminder() async {
